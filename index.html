@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Directory Downloader</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- JSZip for zipping files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <style>
+        /* Base Dark Theme Body */
+        body {
+            background-color: #020617; /* slate-950 */
+            color: #f8fafc; /* slate-50 */
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        /* Glassmorphism Utilities */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.45); /* slate-800 with opacity */
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .glass-input {
+            background: rgba(15, 23, 42, 0.5); /* slate-900 with opacity */
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #f8fafc;
+            transition: all 0.3s ease;
+        }
+
+        .glass-input:focus {
+            background: rgba(15, 23, 42, 0.8);
+            border-color: #3b82f6; /* blue-500 */
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+            outline: none;
+        }
+
+        .glass-button {
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.9) 0%, rgba(29, 78, 216, 0.9) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        }
+
+        .glass-button:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.9) 0%, rgba(37, 99, 235, 0.9) 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+        }
+
+        .glass-button:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+
+        .glass-button:disabled {
+            background: rgba(51, 65, 85, 0.5); /* slate-700 */
+            color: rgba(148, 163, 184, 0.7); /* slate-400 */
+            cursor: not-allowed;
+            border-color: rgba(255, 255, 255, 0.05);
+            box-shadow: none;
+        }
+
+        /* Animated Background Orbs */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: -1;
+            animation: float 10s infinite ease-in-out alternate;
+        }
+
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: rgba(56, 189, 248, 0.3); /* sky-400 */
+            top: -100px;
+            left: -100px;
+        }
+
+        .orb-2 {
+            width: 500px;
+            height: 500px;
+            background: rgba(99, 102, 241, 0.2); /* indigo-500 */
+            bottom: -150px;
+            right: -100px;
+            animation-delay: -5s;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(30px, 50px) scale(1.1); }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        /* Utility */
+        .hidden { display: none !important; }
+
+        /* Custom Tree Checkbox */
+        .glass-checkbox {
+            appearance: none;
+            width: 1.125rem;
+            height: 1.125rem;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 0.25rem;
+            background: rgba(15, 23, 42, 0.5);
+            outline: none;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .glass-checkbox:checked {
+            background: #3b82f6; /* blue-500 */
+            border-color: #3b82f6;
+        }
+        .glass-checkbox:checked::after {
+            content: '';
+            position: absolute;
+            top: 2px; left: 6px;
+            width: 4px; height: 9px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+        .glass-checkbox:indeterminate {
+            background: rgba(59, 130, 246, 0.5);
+            border-color: #3b82f6;
+        }
+        .glass-checkbox:indeterminate::after {
+            content: '';
+            position: absolute;
+            top: 7px; left: 3px;
+            width: 10px; height: 2px;
+            background: white;
+            border-radius: 1px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden">
+
+    <!-- Ambient Background Effects -->
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <!-- Main Container -->
+    <div class="glass-panel w-full max-w-2xl rounded-3xl overflow-hidden relative z-10">
+        
+        <!-- Header -->
+        <div class="px-8 py-10 text-center relative border-b border-white/10 bg-slate-900/20">
+            <div class="flex flex-col items-center">
+                <div class="bg-blue-500/20 p-4 rounded-2xl mb-5 ring-1 ring-blue-500/30 backdrop-blur-md shadow-[0_0_30px_rgba(59,130,246,0.3)]">
+                    <i data-lucide="folder-down" class="w-10 h-10 text-blue-400"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-white mb-3 tracking-tight">GitHub Directory Downloader</h1>
+                <p class="text-slate-400 text-sm max-w-md leading-relaxed">
+                    Download any specific folder from a GitHub repository as a ZIP file, preserving its exact internal structure.
+                </p>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="p-8">
+            <form id="download-form" class="space-y-6">
+                
+                <!-- URL Input -->
+                <div>
+                    <label for="url-input" class="block text-sm font-medium text-slate-300 mb-2">
+                        GitHub Directory URL
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i data-lucide="github" class="w-5 h-5 text-slate-400"></i>
+                        </div>
+                        <input
+                            id="url-input"
+                            type="url"
+                            placeholder="https://github.com/facebook/react/tree/main/packages/react"
+                            class="glass-input block w-full pl-12 pr-4 py-3.5 rounded-xl text-sm placeholder-slate-500"
+                            required
+                        />
+                    </div>
+                </div>
+
+                <!-- Error Message Panel -->
+                <div id="error-panel" class="hidden bg-red-500/10 border border-red-500/20 p-4 rounded-xl flex items-start gap-3 backdrop-blur-sm">
+                    <i data-lucide="alert-circle" class="w-5 h-5 text-red-400 shrink-0 mt-0.5"></i>
+                    <p id="error-text" class="text-sm text-red-200"></p>
+                </div>
+
+                <!-- Success Message Panel -->
+                <div id="success-panel" class="hidden bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl flex items-center gap-3 backdrop-blur-sm">
+                    <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400 shrink-0"></i>
+                    <p class="text-sm font-medium text-emerald-200">Download complete! The ZIP file has been saved.</p>
+                </div>
+
+                <!-- Progress Panel -->
+                <div id="progress-panel" class="hidden bg-slate-900/40 border border-white/5 p-5 rounded-xl backdrop-blur-sm shadow-inner">
+                    <div class="flex items-center justify-between mb-3 text-sm font-medium text-slate-300">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="loader-2" class="w-4 h-4 animate-spin text-blue-400"></i>
+                            <span id="status-text">Scanning directory...</span>
+                        </div>
+                        <span id="progress-percentage" class="text-blue-400 font-bold tracking-wide">0%</span>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div class="h-2 w-full bg-slate-800 rounded-full overflow-hidden shadow-inner ring-1 ring-white/5">
+                        <div 
+                            id="progress-fill"
+                            class="h-full bg-blue-500 transition-all duration-300 ease-out shadow-[0_0_10px_rgba(59,130,246,0.8)]"
+                            style="width: 0%"
+                        ></div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button
+                    id="submit-btn"
+                    type="submit"
+                    class="glass-button w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl text-sm font-semibold text-white mt-4"
+                >
+                    <i data-lucide="search" class="w-5 h-5 btn-icon"></i>
+                    <i data-lucide="loader-2" class="w-5 h-5 animate-spin hidden loading-icon"></i>
+                    <span id="btn-text">Fetch Directory</span>
+                </button>
+            </form>
+
+            <!-- Tree Panel (New) -->
+            <div id="tree-panel" class="hidden mt-6 space-y-4 animate-fade-in">
+                <div class="flex items-center justify-between px-2 text-sm text-slate-300">
+                    <label class="flex items-center gap-2 cursor-pointer group select-none">
+                        <input type="checkbox" id="select-all-cb" class="glass-checkbox" checked>
+                        <span class="group-hover:text-white transition-colors font-medium">Select / Deselect All</span>
+                    </label>
+                    <span class="text-slate-400 text-xs bg-slate-800/50 px-2.5 py-1 rounded-md border border-white/5">
+                        Selected: <span id="selected-count" class="text-blue-400 font-bold">0 / 0</span>
+                    </span>
+                </div>
+                
+                <div class="bg-slate-900/40 border border-white/5 p-4 rounded-xl backdrop-blur-sm shadow-inner max-h-72 overflow-y-auto relative">
+                    <ul id="tree-container" class="text-sm">
+                        <!-- Tree will be rendered here -->
+                    </ul>
+                </div>
+
+                <div class="flex gap-3 pt-2">
+                    <button
+                        id="reset-btn"
+                        type="button"
+                        class="glass-panel flex-1 flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl text-sm font-semibold text-slate-300 hover:text-white hover:bg-slate-800/80 transition-all"
+                    >
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                        Start Over
+                    </button>
+                    <button
+                        id="download-selected-btn"
+                        type="button"
+                        class="glass-button flex-[2] flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl text-sm font-semibold text-white"
+                    >
+                        <i data-lucide="download" class="w-5 h-5"></i>
+                        Download Selected
+                    </button>
+                </div>
+            </div>
+
+            <!-- Footer Info -->
+            <div class="mt-8 pt-6 border-t border-white/10 flex items-start gap-3 text-slate-400 text-xs">
+                <i data-lucide="info" class="w-4 h-4 shrink-0 text-slate-500"></i>
+                <p class="leading-relaxed">
+                    <strong>How it works:</strong> This tool connects to GitHub's API directly from your browser. Files are downloaded and zipped locally on your device. Ensure the target repository is <strong>public</strong>.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // DOM Elements
+        const form = document.getElementById('download-form');
+        const urlInput = document.getElementById('url-input');
+        const submitBtn = document.getElementById('submit-btn');
+        const btnText = document.getElementById('btn-text');
+        const btnIcon = document.querySelector('.btn-icon');
+        const loadingIcon = document.querySelector('.loading-icon');
+        
+        const errorPanel = document.getElementById('error-panel');
+        const errorText = document.getElementById('error-text');
+        
+        const successPanel = document.getElementById('success-panel');
+        
+        const progressPanel = document.getElementById('progress-panel');
+        const statusText = document.getElementById('status-text');
+        const progressPercentage = document.getElementById('progress-percentage');
+        const progressFill = document.getElementById('progress-fill');
+
+        // New DOM Elements for Tree
+        const treePanel = document.getElementById('tree-panel');
+        const treeContainer = document.getElementById('tree-container');
+        const selectAllCb = document.getElementById('select-all-cb');
+        const selectedCount = document.getElementById('selected-count');
+        const downloadSelectedBtn = document.getElementById('download-selected-btn');
+        const resetBtn = document.getElementById('reset-btn');
+
+        // State variables
+        let progress = { current: 0, total: 0 };
+        let currentFetchedFiles = [];
+        let currentParsedUrl = null;
+
+        // Helper: Parse GitHub URL
+        const parseGithubUrl = (url) => {
+            try {
+                url = url.trim();
+                const regex = /^https?:\/\/github\.com\/([^\/]+)\/([^\/]+)\/tree\/([^\/]+)\/(.+)$/;
+                const match = url.match(regex);
+                if (!match) return null;
+                return {
+                    owner: match[1], 
+                    repo: match[2], 
+                    branch: decodeURIComponent(match[3]), 
+                    path: decodeURIComponent(match[4].replace(/\/$/, '')) 
+                };
+            } catch (e) {
+                return null;
+            }
+        };
+
+        // UI Helpers
+        const resetUI = () => {
+            errorPanel.classList.add('hidden');
+            successPanel.classList.add('hidden');
+            progressPanel.classList.add('hidden');
+            treePanel.classList.add('hidden');
+            progressFill.style.width = '0%';
+            progressPercentage.textContent = '0%';
+            statusText.textContent = '';
+            submitBtn.classList.remove('hidden');
+            urlInput.disabled = false;
+        };
+
+        const setLoading = (isLoading) => {
+            urlInput.disabled = isLoading;
+            submitBtn.disabled = isLoading;
+            if (isLoading) {
+                btnText.textContent = 'Scanning...';
+                btnIcon.classList.add('hidden');
+                loadingIcon.classList.remove('hidden');
+            } else {
+                btnText.textContent = 'Fetch Directory';
+                btnIcon.classList.remove('hidden');
+                loadingIcon.classList.add('hidden');
+            }
+        };
+
+        const showError = (message) => {
+            resetUI();
+            errorText.textContent = message;
+            errorPanel.classList.remove('hidden');
+            setLoading(false);
+        };
+
+        const updateProgress = () => {
+            if (progress.total === 0) return;
+            const percent = Math.round((progress.current / progress.total) * 100);
+            progressFill.style.width = `${percent}%`;
+            progressPercentage.textContent = `${percent}%`;
+            statusText.textContent = `Fetching files (${progress.current}/${progress.total})...`;
+        };
+
+        // Checkbox Cascade Logic
+        const updateTreeSelections = () => {
+            const allFiles = document.querySelectorAll('.file-checkbox[data-type="file"]');
+            const checkedFiles = Array.from(allFiles).filter(cb => cb.checked).length;
+            selectedCount.textContent = `${checkedFiles} / ${allFiles.length}`;
+            
+            downloadSelectedBtn.disabled = checkedFiles === 0;
+            
+            const allChecked = checkedFiles === allFiles.length && allFiles.length > 0;
+            const someChecked = checkedFiles > 0;
+            
+            selectAllCb.checked = allChecked;
+            selectAllCb.indeterminate = !allChecked && someChecked;
+        };
+
+        treeContainer.addEventListener('change', (e) => {
+            if (!e.target.classList.contains('file-checkbox')) return;
+            
+            const cb = e.target;
+            const isChecked = cb.checked;
+            const li = cb.closest('li');
+
+            // 1. Cascade Down
+            const childCbs = li.querySelectorAll('.file-checkbox');
+            childCbs.forEach(child => {
+                child.checked = isChecked;
+                child.indeterminate = false;
+            });
+
+            // 2. Cascade Up
+            let parentUl = li.parentElement;
+            while (parentUl && parentUl.classList.contains('tree-children')) {
+                const parentLi = parentUl.closest('li');
+                if (!parentLi) break;
+                
+                const parentCb = parentLi.querySelector(':scope > div > .file-checkbox');
+                if (!parentCb) break;
+
+                const siblingCbs = Array.from(parentUl.querySelectorAll(':scope > li > div > .file-checkbox'));
+                const allChecked = siblingCbs.every(c => c.checked && !c.indeterminate);
+                const someChecked = siblingCbs.some(c => c.checked || c.indeterminate);
+
+                parentCb.checked = allChecked;
+                parentCb.indeterminate = !allChecked && someChecked;
+
+                parentUl = parentLi.parentElement;
+            }
+            updateTreeSelections();
+        });
+
+        selectAllCb.addEventListener('change', (e) => {
+            const isChecked = e.target.checked;
+            document.querySelectorAll('.file-checkbox').forEach(cb => {
+                cb.checked = isChecked;
+                cb.indeterminate = false;
+            });
+            updateTreeSelections();
+        });
+
+        // Tree Generation
+        const buildTreeData = (files, folderName) => {
+            const root = { name: folderName, path: 'ROOT', type: 'folder', children: {} };
+            files.forEach(file => {
+                const relativePath = file.relativePath;
+                if (!relativePath) return;
+                
+                const parts = relativePath.split('/');
+                let current = root;
+                
+                parts.forEach((part, index) => {
+                    if (!current.children[part]) {
+                        current.children[part] = {
+                            name: part,
+                            path: parts.slice(0, index + 1).join('/'),
+                            type: index === parts.length - 1 ? 'file' : 'folder',
+                            children: {}
+                        };
+                    }
+                    current = current.children[part];
+                });
+            });
+            return root;
+        };
+
+        const renderTreeDOM = (node) => {
+            const li = document.createElement('li');
+            li.className = 'mt-1.5 relative';
+            
+            const row = document.createElement('div');
+            row.className = 'flex items-center gap-2.5 py-1.5 px-2 rounded-lg hover:bg-white/10 cursor-pointer text-slate-200 transition-colors group';
+
+            const chevronHtml = node.type === 'folder' 
+                ? `<i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 group-hover:text-slate-200 transition-colors chevron-icon shrink-0"></i>`
+                : `<div class="w-4 h-4 shrink-0"></div>`; // Spacer for files
+
+            const iconHtml = node.type === 'folder' 
+                ? `<i data-lucide="folder" class="w-4 h-4 text-blue-400 shrink-0"></i>`
+                : `<i data-lucide="file" class="w-4 h-4 text-slate-400 shrink-0"></i>`;
+
+            row.innerHTML = `
+                ${chevronHtml}
+                <input type="checkbox" class="glass-checkbox file-checkbox" data-path="${node.path}" data-type="${node.type}" checked>
+                ${iconHtml}
+                <span class="truncate select-none">${node.name}</span>
+            `;
+
+            li.appendChild(row);
+
+            if (node.type === 'folder') {
+                const ul = document.createElement('ul');
+                ul.className = 'pl-5 ml-2 border-l border-white/10 mt-1 tree-children';
+                
+                // Sort: Folders first, then alphabetically
+                const sortedChildren = Object.values(node.children).sort((a, b) => {
+                    if (a.type !== b.type) return a.type === 'folder' ? -1 : 1;
+                    return a.name.localeCompare(b.name);
+                });
+
+                sortedChildren.forEach(child => ul.appendChild(renderTreeDOM(child)));
+                li.appendChild(ul);
+
+                // Expand/Collapse logic
+                const toggleCollapse = (e) => {
+                    if (e.target.type === 'checkbox') return; 
+                    e.stopPropagation();
+                    ul.classList.toggle('hidden');
+                    const chevron = row.querySelector('.chevron-icon');
+                    if (chevron) {
+                        chevron.setAttribute('data-lucide', ul.classList.contains('hidden') ? 'chevron-right' : 'chevron-down');
+                        lucide.createIcons({root: row});
+                    }
+                };
+                row.addEventListener('click', toggleCollapse);
+            } else {
+                row.addEventListener('click', (e) => {
+                    if (e.target.type === 'checkbox') return;
+                    const cb = row.querySelector('.file-checkbox');
+                    cb.checked = !cb.checked;
+                    cb.dispatchEvent(new Event('change', { bubbles: true }));
+                });
+            }
+            return li;
+        };
+
+        // Concurrency Execution
+        const executeConcurrently = async (items, asyncFn, limit) => {
+            const results = [];
+            const executing = [];
+            for (const item of items) {
+                const p = Promise.resolve().then(() => asyncFn(item));
+                results.push(p);
+                if (limit <= items.length) {
+                    const e = p.then(() => executing.splice(executing.indexOf(e), 1));
+                    executing.push(e);
+                    if (executing.length >= limit) await Promise.race(executing);
+                }
+            }
+            return Promise.all(results);
+        };
+
+        // Step 1: Fetch Repository Map
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const url = urlInput.value;
+            if (!url) return;
+
+            resetUI();
+            setLoading(true);
+
+            currentParsedUrl = parseGithubUrl(url);
+            if (!currentParsedUrl) {
+                showError("Invalid URL format. Please provide a link to a specific GitHub directory.");
+                return;
+            }
+
+            const { owner, repo, branch, path } = currentParsedUrl;
+
+            try {
+                // 1. Traverse path step-by-step to get target folder SHA to avoid repo-wide truncation limits
+                let currentSha = branch;
+                const parts = path.split('/');
+                
+                for (let i = 0; i < parts.length; i++) {
+                    const part = parts[i];
+                    statusText.textContent = `Locating: ${part}...`;
+                    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/${currentSha}`);
+                    
+                    if (!res.ok) {
+                        if (res.status === 404) throw new Error(`Could not find folder: ${part}`);
+                        if (res.status === 403) throw new Error("GitHub API rate limit exceeded.");
+                        throw new Error(`Failed to access folder: ${part}`);
+                    }
+                    
+                    const data = await res.json();
+                    const target = data.tree.find(item => item.path === part);
+                    
+                    if (!target) throw new Error(`Folder "${part}" not found.`);
+                    if (target.type !== 'tree') throw new Error(`"${part}" is a file, not a directory.`);
+                    
+                    currentSha = target.sha;
+                }
+
+                // 2. Fetch ONLY the target directory recursively
+                statusText.textContent = 'Scanning directory structure...';
+                const treeUrl = `https://api.github.com/repos/${owner}/${repo}/git/trees/${currentSha}?recursive=1`;
+                const treeRes = await fetch(treeUrl);
+                
+                if (!treeRes.ok) throw new Error("Failed to fetch directory contents.");
+
+                const treeData = await treeRes.json();
+                
+                currentFetchedFiles = treeData.tree
+                    .filter(item => item.type === 'blob')
+                    .map(item => ({
+                        ...item,
+                        relativePath: item.path, 
+                        fullPath: `${path}/${item.path}`
+                    }));
+
+                if (currentFetchedFiles.length === 0) throw new Error("No files found in the specified directory.");
+
+                // Build and Render Tree
+                const folderName = path.split('/').pop();
+                const treeDataHierarchy = buildTreeData(currentFetchedFiles, folderName);
+                treeContainer.innerHTML = ''; 
+                treeContainer.appendChild(renderTreeDOM(treeDataHierarchy));
+                lucide.createIcons({root: treeContainer});
+                
+                // Show Tree UI
+                submitBtn.classList.add('hidden');
+                treePanel.classList.remove('hidden');
+                selectAllCb.checked = true;
+                updateTreeSelections();
+
+            } catch (err) {
+                showError(err.message || "An unexpected error occurred.");
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        // Step 2: Download Selected Files
+        downloadSelectedBtn.addEventListener('click', async () => {
+            const checkedFileNodes = Array.from(document.querySelectorAll('.file-checkbox[data-type="file"]:checked'));
+            if (checkedFileNodes.length === 0) return;
+
+            const pathsToDownload = new Set(checkedFileNodes.map(cb => cb.dataset.path));
+            const filesToDownload = currentFetchedFiles.filter(file => pathsToDownload.has(file.relativePath));
+
+            const { owner, repo, branch, path } = currentParsedUrl;
+            
+            treePanel.classList.add('hidden');
+            progressPanel.classList.remove('hidden');
+            progress = { current: 0, total: filesToDownload.length };
+            updateProgress();
+
+            try {
+                const zip = new JSZip();
+                const CONCURRENCY_LIMIT = 6;
+
+                const downloadFile = async (file) => {
+                    // Encode the file path properly so URLs with spaces and special characters work
+                    const encodedFilePath = file.fullPath.split('/').map(encodeURIComponent).join('/');
+                    const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${encodedFilePath}`;
+                    
+                    const res = await fetch(rawUrl);
+                    if (!res.ok) throw new Error(`Failed to download: ${file.relativePath}`);
+                    
+                    const blob = await res.blob();
+                    const folderName = path.split('/').pop();
+                    const zipPath = `${folderName}/${file.relativePath}`;
+
+                    zip.file(zipPath, blob);
+                    progress.current++;
+                    updateProgress();
+                };
+
+                await executeConcurrently(filesToDownload, downloadFile, CONCURRENCY_LIMIT);
+
+                statusText.textContent = 'Compressing into ZIP...';
+                const zipBlob = await zip.generateAsync({ type: 'blob' });
+                
+                const downloadLink = document.createElement('a');
+                downloadLink.href = URL.createObjectURL(zipBlob);
+                downloadLink.download = `${repo}-${path.split('/').pop()}-selected.zip`;
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                URL.revokeObjectURL(downloadLink.href);
+
+                // Show Success
+                resetUI();
+                successPanel.classList.remove('hidden');
+                setTimeout(() => successPanel.classList.add('hidden'), 5000);
+
+            } catch (err) {
+                showError(err.message || "An error occurred during download.");
+            }
+        });
+
+        // Reset Button
+        resetBtn.addEventListener('click', () => {
+            resetUI();
+            urlInput.value = '';
+            urlInput.focus();
+        });
+
+        // Validation UI
+        urlInput.addEventListener('input', () => {
+            if (urlInput.value && !parseGithubUrl(urlInput.value)) {
+                urlInput.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+            } else {
+                urlInput.style.borderColor = ''; 
+            }
+        });
+    </script>
+</body>
+</html>
