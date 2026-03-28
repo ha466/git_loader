@@ -1,0 +1,73 @@
+<svg width="100%" height="920" viewBox="0 0 900 920" fill="none" xmlns="http://www.w3.org/2000/svg" style="background: #0a0a0a;">
+  <!-- Dark background -->
+  <rect width="900" height="920" fill="#0a0a0a"/>
+  
+  <!-- Glassmorphic main card -->
+  <rect x="50" y="60" width="800" height="800" rx="24" fill="#1a1a2e" fill-opacity="0.85" stroke="#4a9eff" stroke-width="2"/>
+  
+  <!-- Title -->
+  <text x="450" y="130" font-family="system-ui, sans-serif" font-size="42" font-weight="800" fill="#ffffff" text-anchor="middle" letter-spacing="-1.5">
+    🛸 Git Loader
+  </text>
+  <text x="450" y="165" font-family="system-ui, sans-serif" font-size="18" fill="#88ccff" text-anchor="middle" font-style="italic">
+    (Glassy GitHub Downloader)
+  </text>
+
+  <!-- Subtitle -->
+  <text x="450" y="210" font-family="system-ui, sans-serif" font-size="17" fill="#aaaaaa" text-anchor="middle" font-weight="500">
+    Because downloading a 5GB repository just to get one tiny assets folder is a crime against bandwidth.
+  </text>
+
+  <!-- Description -->
+  <text x="450" y="265" font-family="system-ui, sans-serif" font-size="16" fill="#cccccc" text-anchor="middle" line-spacing="6">
+    <tspan x="450" dy="0">Have you ever found the perfect 2MB folder inside an absolute behemoth of a GitHub repo?</tspan>
+    <tspan x="450" dy="28">Git Loader lets you paste a folder URL and get only that folder as a clean ZIP.</tspan>
+  </text>
+
+  <!-- Features Header -->
+  <text x="450" y="340" font-family="system-ui, sans-serif" font-size="24" font-weight="700" fill="#4a9eff" text-anchor="middle">
+    ✨ Features
+  </text>
+
+  <!-- Features -->
+  <text x="150" y="390" font-family="system-ui, sans-serif" font-size="15.5" fill="#aaccff" text-anchor="start">
+    • 🎯 Surgical Precision – Download only the exact folder you need
+  </text>
+  <text x="150" y="420" font-family="system-ui, sans-serif" font-size="15.5" fill="#aaccff" text-anchor="start">
+    • 🌳 Interactive File Tree – Uncheck files you don’t want
+  </text>
+  <text x="150" y="450" font-family="system-ui, sans-serif" font-size="15.5" fill="#aaccff" text-anchor="start">
+    • 🕶️ Glassmorphism UI with floating ambient orbs
+  </text>
+  <text x="150" y="480" font-family="system-ui, sans-serif" font-size="15.5" fill="#aaccff" text-anchor="start">
+    • 🧠 Smart Traversal – Bypasses GitHub’s 100k file limit
+  </text>
+  <text x="150" y="510" font-family="system-ui, sans-serif" font-size="15.5" fill="#aaccff" text-anchor="start">
+    • 🕵️ Zero Backend – Everything runs in your browser
+  </text>
+
+  <!-- How to Use -->
+  <text x="450" y="580" font-family="system-ui, sans-serif" font-size="22" font-weight="700" fill="#4a9eff" text-anchor="middle">
+    🚀 How to Use
+  </text>
+
+  <text x="120" y="620" font-family="system-ui, sans-serif" font-size="15" fill="#bbbbbb" text-anchor="start">
+    1. Go to any GitHub folder → Copy the URL<br/>
+    2. Paste it here → See the file tree<br/>
+    3. Select what you want → Download clean ZIP
+  </text>
+
+  <!-- Bottom text -->
+  <text x="450" y="720" font-family="system-ui, sans-serif" font-size="14" fill="#666666" text-anchor="middle">
+    Pure Vanilla JS • Tailwind via CDN • Zero dependencies • Just open index.html
+  </text>
+
+  <text x="450" y="760" font-family="system-ui, sans-serif" font-size="13" fill="#555555" text-anchor="middle">
+    Created with ❤️, ☕, and hatred for unnecessary 5GB downloads
+  </text>
+
+  <!-- Decorative orbs -->
+  <circle cx="120" cy="180" r="18" fill="#4a9eff" fill-opacity="0.15"/>
+  <circle cx="780" cy="280" r="25" fill="#ff79c6" fill-opacity="0.12"/>
+  <circle cx="680" cy="650" r="15" fill="#50fa7b" fill-opacity="0.18"/>
+</svg>
