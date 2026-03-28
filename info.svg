@@ -53,7 +53,11 @@
 
   <text x="120" y="620" font-family="system-ui, sans-serif" font-size="15" fill="#bbbbbb" text-anchor="start">
     1. Go to any GitHub folder → Copy the URL<br/>
+   </text>
+  <text x="150" y="510" font-family="system-ui, sans-serif" font-size="15.5" fill="#aaccff" text-anchor="start">
     2. Paste it here → See the file tree<br/>
+  </text>
+  <text x="150" y="510" font-family="system-ui, sans-serif" font-size="15.5" fill="#aaccff" text-anchor="start">
     3. Select what you want → Download clean ZIP
   </text>
 
