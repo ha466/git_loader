@@ -4,4 +4,4 @@
   <img src="info.svg" alt="Git Loader - Glassy GitHub Downloader" style="width: 100%; height: auto; display: block;">
 </div>
 
-[🔗 Open Git Loader (info.html)](https://ha466.github.io/git_loader/info.html)
+[🔗 Open Git Loader (info)](https://ha466.github.io/git_loader/info.html)
